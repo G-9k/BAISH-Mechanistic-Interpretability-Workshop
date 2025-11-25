@@ -273,6 +273,7 @@ for i, acc in enumerate(layer_accuracies):
     print(f"  Layer {i}: {acc:.3f}")
 
 best_layer = np.argmax(layer_accuracies)
+#best_layer = 1
 print(f"\n✓ Best layer: Layer {best_layer} with {layer_accuracies[best_layer]:.3f} accuracy")
 
 # %% CRITICAL DIAGNOSTIC: Is the probe actually using the activations?
@@ -289,24 +290,42 @@ Let's run three tests:
 3. Compare real activations vs random noise
 """)
 
-# Test 1: Base rate
-#base_rate = Complete here
-#print(f"\nTest 1 - Base Rate (majority class accuracy):")
-#print(f"  If we always predict the most common class: {base_rate:.3f}")
+#Test 1: Base rate
+base_rate = max(labels.count(0), labels.count(1)) / len(labels)
+print(f"\nTest 1 - Base Rate (majority class accuracy):")
+print(f"  If we always predict the most common class: {base_rate:.3f}")
 
 # Test 2: Probe on random noise
-#print(f"\nTest 2 - Training probe on RANDOM NOISE...")
-#random_activations = Complete here
-#
-#
-#print(f"  Probe on random noise: {random_acc:.3f}")
+print(f"\nTest 2 - Training probe on RANDOM NOISE...")
+random_activations = np.random.random(layer_activations[0].shape)
+
+# Get activations for this layer
+y_random = labels_array
+    
+# Split train/test
+X_trainRand, X_testRand, y_trainRand, y_testRand = train_test_split(
+    random_activations, y_random, test_size=0.2, random_state=42, stratify=y_random
+)
+    
+# Train probe
+probe = LogisticRegression(max_iter=5000, random_state=42)
+probe.fit(X_trainRand, y_trainRand)
+    
+# Evaluate
+# train_acc = probe.score(X_train, y_train)
+# test_acc = probe.score(X_test, y_test)
+
+random_acc = probe.score(X_testRand, y_testRand)
+
+
+print(f"  Probe on random noise: {random_acc:.3f}")
 
 # Test 3: Compare
-#print(f"\nTest 3 - COMPARISON:")
-#print(f"  Base rate (always predict majority): {base_rate:.3f}")
-#print(f"  Probe on random noise:               {random_acc:.3f}")
-#for layer_idx in range(len(model.blocks)):  
-#    print(f"  Probe on Layer {layer_idx} activations:        {layer_accuracies[layer_idx]:.3f}")
+print(f"\nTest 3 - COMPARISON:")
+print(f"  Base rate (always predict majority): {base_rate:.3f}")
+print(f"  Probe on random noise:               {random_acc:.3f}")
+for layer_idx in range(len(model.blocks)):  
+    print(f"  Probe on Layer {layer_idx} activations:        {layer_accuracies[layer_idx]:.3f}")
 
 # Interpretation
 print("\n" + "="*60)
